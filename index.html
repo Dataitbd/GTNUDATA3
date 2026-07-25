@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="bn" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="appTitle">গ্রামীণ ট্রাস্ট উদ্যোক্তা তথ্য</title>
+    <!-- SheetJS for Excel/CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'SolaimanLipi', Arial, sans-serif; }
+        body { background-color: #f0f4f1; color: #333; padding: 10px; }
+        .app-container { max-width: 650px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        header { background-color: #2e7d32; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 8px; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .login-site-btn { background: #ff9800; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; text-decoration: none; font-weight: bold; }
+        
+        .user-profile-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 20px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
+        .user-profile-icon { width: 30px; height: 30px; border-radius: 50%; background: #fff; color: #2e7d32; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; }
+        .user-profile-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .user-profile-name { font-size: 12px; color: white; font-weight: bold; }
+
+        .content { padding: 14px; }
+        
+        /* Top Controls Bar */
+        .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+        .search-box-top { flex: 1; min-width: 220px; display: flex; gap: 4px; }
+        .search-box-top input { padding: 6px 10px; border: 1px solid #2e7d32; border-radius: 6px 0 0 6px; font-size: 13px; width: 100%; }
+        .search-box-top button { padding: 6px 12px; background: #2e7d32; color: white; border: none; border-radius: 0 6px 6px 0; font-size: 13px; font-weight: bold; cursor: pointer; width: auto; }
+        .lang-switch { padding: 6px; border-radius: 6px; border: 1px solid #2e7d32; background: #fff; color: #2e7d32; font-weight: bold; font-size: 12px; cursor: pointer; }
+
+        /* Navigation Buttons Bar */
+        .nav-buttons-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+        .nav-buttons-bar button { flex: 1; padding: 8px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; }
+        .btn-view-main { background-color: #2e7d32; }
+        .btn-view-collection { background-color: #00897b; }
+
+        /* Form Section */
+        .form-section { background: #e8f5e9; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #c8e6c9; display: none; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 3px; font-weight: bold; color: #2e7d32; font-size: 13px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        
+        .phone-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+        .phone-row input { flex: 2; }
+        .phone-row select { flex: 1; }
+        
+        .action-btns { display: flex; gap: 10px; margin-top: 10px; }
+        button { padding: 10px; background-color: #2e7d32; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; }
+        button:hover { opacity: 0.9; }
+        
+        .toggle-form-btn { background-color: #1976d2; margin-bottom: 10px; }
+        .calc-btn { background-color: #0288d1; margin-top: 10px; }
+
+        /* Bulk Upload Box with explicit Upload & Delete buttons */
+        .bulk-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; }
+        .bulk-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+        /* Summary & Filters */
+        .summary-box { background: #f1f8e9; border: 1px solid #7cb342; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        .summary-box h4 { color: #33691e; margin-bottom: 8px; font-size: 14px; }
+        .filter-row { display: flex; gap: 8px; margin-bottom: 8px; }
+
+        .total-box { background-color: #dcedc8; border: 1px solid #689f38; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .total-box h3 { color: #33691e; font-size: 14px; }
+        .total-box span { color: #1b5e20; font-size: 16px; font-weight: bold; }
+
+        .collection-page { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #b2dfdb; margin-bottom: 15px; display: none; }
+
+        /* Table */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; vertical-align: middle; }
+        th { background-color: #2e7d32; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        .ent-photo { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #2e7d32; cursor: pointer; }
+        .ent-name-link { color: #1976d2; cursor: pointer; font-weight: bold; text-decoration: underline; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal-content { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 10px; max-height: 90vh; overflow-y: auto; }
+        
+        .calc-body { background: white; width: 300px; padding: 15px; border-radius: 10px; }
+        .calc-screen { width: 100%; height: 50px; background: #222; color: #fff; font-size: 20px; text-align: right; padding: 8px; border-radius: 6px; margin-bottom: 10px; }
+        .calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .calc-keys button { padding: 12px; font-size: 16px; background: #e0e0e0; color: #333; margin: 0; }
+        .calc-keys button.op { background: #ff9800; color: white; }
+        .calc-keys button.eq { background: #4caf50; color: white; grid-column: span 2; }
+        .calc-keys button.clr { background: #f44336; color: white; }
+
+        footer { text-align: center; font-size: 11px; color: #555; margin-top: 20px; padding: 10px; border-top: 1px solid #ddd; background: #fafafa; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <div class="header-left">
+            <span id="headerTitle" style="font-size: 14px; font-weight: bold;">গ্রামীণ ট্রাস্ট উদ্যোক্তা তথ্য</span>
+        </div>
+        <div class="header-right">
+            <a href="https://gtp3.nobinep.com/Account/Login?ReturnUrl=%2fHome%2fIndex" target="_blank" class="login-site-btn" id="btnLinkText">লগইন সাইট</a>
+            <div class="user-profile-badge" id="userProfileBadge" onclick="openProfileModal()" title="ইউজার প্রোফাইল ও সেটিংস">
+                <div class="user-profile-icon" id="userAvatarDisplay">👤</div>
+                <span class="user-profile-name" id="userBadgeName">লগইন</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- টপ কন্ট্রোলস: সার্চ ও ভাষা পরিবর্তন -->
+        <div class="top-controls">
+            <div class="search-box-top">
+                <input type="text" id="topSearchInput" placeholder="নাম, আইডি, মোবাইল বা প্রকল্প দিয়ে খুঁজুন...">
+                <button onclick="globalSearchRecords()" id="btnSearchAction">সার্চ করুন</button>
+            </div>
+            <select class="lang-switch" id="langSelector" onchange="changeLanguage()">
+                <option value="bn">বাংলা (Bangla)</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <!-- নেভিগেশন ট্যাব বাটন -->
+        <div class="nav-buttons-bar">
+            <button class="btn-view-main" onclick="switchView('main')" id="navBtnHome">🏠 উদ্যোক্তা তালিকা</button>
+            <button class="btn-view-collection" onclick="switchView('collection')" id="navBtnCollection">💰 কিস্তি সংগ্রহ পেজ</button>
+        </div>
+
+        <!-- মূল ড্যাশবোর্ড -->
+        <div id="mainDashboardView">
+            <!-- এক্সেল/পিডিএফ/ফাইল আপলোড ও ডিলিট সেকশন -->
+            <div class="bulk-box">
+                <label id="lblBulkTitle" style="color: #0d47a1; margin-bottom: 4px; font-weight: bold;">📁 এক্সেল বা ফাইল আপলোড ও ডিলিট করুন:</label>
+                <input type="file" id="bulkFileExcel" accept=".xlsx, .xls, .csv, .vcf" style="font-size: 12px; margin-bottom: 6px;">
+                <div class="bulk-actions">
+                    <button type="button" onclick="executeBulkUpload()" style="background: #1976d2; padding: 6px; font-size: 12px;" id="btnUploadAction">আপলোড</button>
+                    <button type="button" onclick="executeBulkDelete()" style="background: #d32f2f; padding: 6px; font-size: 12px;" id="btnDeleteAction">সকল ডাটা ডিলিট</button>
+                </div>
+            </div>
+
+            <button class="toggle-form-btn" onclick="toggleForm()" id="btnAddNew">+ নতুন উদ্যোক্তা যুক্ত করুন</button>
+
+            <!-- ফরম সেকশন (ক্লিক করলে যেকোনো তথ্য পরিবর্তন করা যাবে) -->
+            <div class="form-section" id="formSection">
+                <h3 id="formTitle" style="margin-bottom: 10px; color: #2e7d32; font-size: 15px;">নতুন উদ্যোক্তার তথ্য ফরম</h3>
+                <input type="hidden" id="editIndex" value="">
+                
+                <div class="form-group">
+                    <label id="lblPhoto">উদ্যোক্তার ছবি</label>
+                    <input type="file" id="entPhotoFile" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label id="lblName">উদ্যোক্তার নাম</label>
+                    <input type="text" id="entName" placeholder="নাম লিখুন">
+                </div>
+                <div class="form-group">
+                    <label id="lblGuardian">স্বামীর নাম বা পিতার নাম</label>
+                    <input type="text" id="husOrFatherName" placeholder="নাম লিখুন">
+                </div>
+                <div class="form-group">
+                    <label id="lblIdNo">আইডি নম্বর</label>
+                    <input type="text" id="idNo" placeholder="আইডি নম্বর লিখুন" oninput="autoFillById(this)">
+                </div>
+
+                <!-- ফোনবুক এবং মোবাইল নম্বর সেকশন -->
+                <div class="form-group">
+                    <label id="lblPhoneSection">মোবাইল নম্বর ও কার নম্বর</label>
+                    <div style="display: flex; gap: 5px; margin-bottom: 6px;">
+                        <button type="button" onclick="pickFromPhoneBook()" style="background: #0288d1; padding: 6px; font-size: 12px; flex: 1;" id="btnPhonebook">📱 ফোনবুক থেকে নিন</button>
+                        <input type="file" id="phoneBookImport" accept=".vcf,.csv" style="display:none;" onchange="importPhoneBookFile(event)">
+                        <button type="button" onclick="document.getElementById('phoneBookImport').click()" style="background: #7b1fa2; padding: 6px; font-size: 12px; flex: 1;" id="btnAddPhoneFile">📂 এড ফোনবুক ফাইল</button>
+                    </div>
+                    <div id="phoneFieldsContainer">
+                        <div class="phone-row">
+                            <input type="tel" class="p-num" placeholder="017xxxxxxxx" oninput="autoFillFromPhoneCache(this)">
+                            <select class="p-type">
+                                <option value="উদ্যোক্তা">উদ্যোক্তা</option>
+                                <option value="স্বামী">স্বামী</option>
+                                <option value="পিতা">পিতা</option>
+                                <option value="অন্যান্য">অন্যান্য</option>
+                            </select>
+                            <button type="button" onclick="addPhoneField()" style="width: auto; padding: 8px; background: #1976d2;" id="btnAddPhoneBtn">এড ফোন</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label id="lblProject">প্রকল্পের নাম</label>
+                    <input type="text" id="projectName" placeholder="প্রকল্পের নাম লিখুন">
+                </div>
+                <div class="form-group">
+                    <label id="lblTotalLoan">মোট লোন পরিমাণ (টাকা)</label>
+                    <input type="number" id="loanAmount" placeholder="লোনের মোট পরিমাণ লিখুন">
+                </div>
+                <div class="form-group">
+                    <label id="lblMonthlyInstallment">প্রতি মাসে কিস্তির পরিমাণ (টাকা)</label>
+                    <input type="number" id="amount" placeholder="মাসিক কিস্তির পরিমাণ লিখুন">
+                </div>
+                <div class="form-group">
+                    <label id="lblCenter">এলাকার নাম বা কেন্দ্রের নাম</label>
+                    <input type="text" id="centerName" list="centerSuggestions" placeholder="কেন্দ্রের নাম লিখুন বা সিলেক্ট করুন">
+                    <datalist id="centerSuggestions"></datalist>
+                </div>
+                <div class="form-group">
+                    <label id="lblDate">তারিখ</label>
+                    <input type="date" id="collectionDate">
+                </div>
+
+                <div class="action-btns">
+                    <button onclick="saveRecord()" id="btnSave">সংরক্ষণ করুন</button>
+                    <button style="background: #757575;" onclick="toggleForm()" id="btnCancel">বাতিল</button>
+                </div>
+            </div>
+
+            <!-- কেন্দ্র ও নির্দিষ্ট তারিখ অনুযায়ী আদায় রিপোর্ট -->
+            <div class="summary-box">
+                <h4 id="filterBoxTitle">কেন্দ্র ও নির্দিষ্ট তারিখ অনুযায়ী আদায় রিপোর্ট</h4>
+                <div class="filter-row">
+                    <input type="text" id="filterCenter" placeholder="কেন্দ্রের নাম দিয়ে খুঁজুন">
+                    <input type="date" id="filterDate">
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button onclick="filterRecords()" style="background: #33691e; padding: 8px; flex: 1;" id="btnReportSearch">রিপোর্ট দেখুন</button>
+                    <button onclick="resetFilter()" style="background: #757575; padding: 8px; flex: 1;" id="btnReportReset">সব দেখুন</button>
+                </div>
+            </div>
+
+            <!-- মোট আদায় ও উদ্যোক্তা সংখ্যা বক্স -->
+            <div class="total-box">
+                <div>
+                    <h3 style="margin-bottom: 2px;"><span id="txtTotalEntLabel">মোট উদ্যোক্তা:</span> <span id="totalEntrepreneurCount">০</span> <span id="txtPersonLabel">জন</span></h3>
+                    <h3><span id="txtTotalCollectionLabel">মোট আদায়:</span> <span id="totalDisplay">৳ ০</span></h3>
+                </div>
+                <button onclick="shareAllData()" style="background: #00897b; width: auto; padding: 8px 12px; font-size: 13px;" id="btnShareAll">📤 তথ্য শেয়ার</button>
+            </div>
+
+            <button class="calc-btn" onclick="openCalculator()" id="btnCalc">ক্যালকুলেটর খুলুন</button>
+
+            <!-- তালিকা সেকশন -->
+            <div class="table-container" style="margin-top: 15px;">
+                <h3 id="tableHeaderLabel" style="margin-bottom: 8px; color: #2e7d32; font-size: 14px;">উদ্যোক্তাদের তালিকা (নামে বা যেকোনো তথ্যে ক্লিক করলে পরিবর্তন বা এডিট করা যাবে):</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th id="thPhoto">ছবি</th>
+                            <th id="thNameId">নাম ও আইডি</th>
+                            <th id="thPhone">মোবাইল নম্বরসমূহ ও কল</th>
+                            <th id="thProjCenter">প্রকল্প ও কেন্দ্র</th>
+                            <th id="thInstallment">কিস্তি</th>
+                            <th id="thDate">তারিখ</th>
+                            <th id="thAction">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordTableBody">
+                        <!-- ডায়নামিক ডাটা -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- কিস্তি সংগ্রহ পেজ -->
+        <div id="collectionPageView" class="collection-page">
+            <h3 style="color: #00897b; margin-bottom: 12px; font-size: 15px;">💰 কিস্তি সংগ্রহ ও আদায় এন্ট্রি</h3>
+            <div class="form-group">
+                <label>উদ্যোক্তার আইডি নম্বর বা নাম লিখে বা সিলেক্ট করুন</label>
+                <input type="text" id="colIdSearchInput" placeholder="আইডি বা নাম লিখে খুঁজুন..." oninput="filterColDropdown(this)" style="margin-bottom: 5px;">
+                <select id="colSelectId" onchange="onCollectionIdSelected()" style="padding: 8px; border-radius: 6px; width: 100%;">
+                    <option value="">-- উদ্যোক্তা বা আইডি সিলেক্ট করুন --</option>
+                </select>
+            </div>
+            <div id="colDetailsCard" style="background: #f5f5f5; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 13px; display: none;">
+                <p><b>নাম:</b> <span id="colEntName">-</span></p>
+                <p><b>আইডি নং:</b> <span id="colEntIdText">-</span></p>
+                <p><b>প্রকল্প:</b> <span id="colProjectName">-</span></p>
+                <p><b>মোট লোন:</b> ৳ <span id="colLoanAmount">0</span></p>
+                <p><b>নির্ধারিত কিস্তি:</b> ৳ <span id="colFixedInstallment">0</span></p>
+            </div>
+            <div class="form-group">
+                <label>আদায়ের তারিখ</label>
+                <input type="date" id="colDateInput">
+            </div>
+            <div class="form-group">
+                <label>সংগৃহীত কিস্তির পরিমাণ (টাকা ইনপুট দিন)</label>
+                <input type="number" id="colPaidAmount" placeholder="টাকার পরিমাণ লিখুন">
+            </div>
+            <button onclick="saveCollectionRecord()" style="background-color: #00897b; margin-top: 5px;" id="btnCollectionSave">কিস্তি সংগ্রহ</button>
+            
+            <div style="margin-top: 15px;">
+                <h4 style="font-size: 13px; color: #333; margin-bottom: 6px;">তারিখ অনুযায়ী সংগৃহীত কিস্তির বিবরণী ও মোট আদায়:</h4>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>তারিখ</th>
+                                <th>নাম ও আইডি</th>
+                                <th>আদায়কৃত টাকা</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collectionHistoryBody">
+                            <!-- কালেকশন হিস্ট্রি -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <span id="footerCopyright">কপিরাইট: মোঃ ফোরকান হোসাইন, সহকারী ইউনিট অফিসার, আইডি নং-৪২৭</span>
+    </footer>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalDetailsTitle" style="color: #2e7d32; margin-bottom: 12px; text-align: center;">উদ্যোক্তার বিস্তারিত তথ্য</h3>
+        <div id="detailsBody" style="font-size: 14px; line-height: 1.6;"></div>
+        <div style="display: flex; gap: 8px; margin-top: 15px;">
+            <button onclick="shareSingleRecord()" style="background: #00897b; flex: 1;" id="btnModalShare">📤 শেয়ার</button>
+            <button style="background: #757575; flex: 1;" onclick="closeDetailsModal()" id="btnModalClose">বন্ধ করুন</button>
+        </div>
+    </div>
+</div>
+
+<!-- User Profile & Login Modal -->
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalProfileTitle" style="color: #2e7d32; margin-bottom: 12px; text-align: center;">ইউজার প্রোফাইল ও সেটিংস</h3>
+        <div id="profileViewSection">
+            <div style="text-align:center; margin-bottom:12px;" id="profileModalAvatar">👤</div>
+            <p><b>নাম:</b> <span id="pNameDisp">মোঃ ফোরকান হোসাইন</span></p>
+            <p><b>পদবী:</b> <span id="pDesigDisp">সহকারী ইউনিট অফিসার</span></p>
+            <p><b>আইডি নম্বর:</b> <span id="pIdDisp">৪২৭</span></p>
+            <button onclick="switchToEditProfile()" style="background: #ff9800; margin-top: 15px;" id="btnEditProfile">প্রোফাইল এডিট ও পাসওয়ার্ড পরিবর্তন</button>
+            <button style="background: #757575; margin-top: 8px;" onclick="closeProfileModal()" id="btnProfileClose">বন্ধ করুন</button>
+        </div>
+
+        <div id="profileEditSection" style="display:none;">
+            <div class="form-group">
+                <label>আপনার নাম</label>
+                <input type="text" id="loginName" value="মোঃ ফোরকান হোসাইন">
+            </div>
+            <div class="form-group">
+                <label>পদবী</label>
+                <input type="text" id="loginDesig" value="সহকারী ইউনিট অফিসার">
+            </div>
+            <div class="form-group">
+                <label>আইডি নম্বর</label>
+                <input type="text" id="loginIdNo" value="৪২৭">
+            </div>
+            <div class="form-group">
+                <label>নতুন পাসওয়ার্ড</label>
+                <input type="password" id="loginPass" placeholder="পাসওয়ার্ড দিন">
+            </div>
+            <div class="form-group">
+                <label>আপনার ছবি</label>
+                <input type="file" id="loginPhotoFile" accept="image/*">
+            </div>
+            <div class="action-btns">
+                <button onclick="saveUserProfile()">সংরক্ষণ করুন</button>
+                <button style="background: #757575;" onclick="cancelEditProfile()">বাতিল</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calculator Modal -->
+<div id="calculatorModal" class="modal">
+    <div class="calc-body">
+        <div class="calc-screen" id="calcScreen">0</div>
+        <div class="calc-keys">
+            <button class="clr" onclick="clearCalc()">C</button>
+            <button onclick="appendCalc('(')">(</button>
+            <button onclick="appendCalc(')')">)</button>
+            <button class="op" onclick="appendCalc('/')">/</button>
+            <button onclick="appendCalc('7')">7</button>
+            <button onclick="appendCalc('8')">8</button>
+            <button onclick="appendCalc('9')">9</button>
+            <button class="op" onclick="appendCalc('*')">*</button>
+            <button onclick="appendCalc('4')">4</button>
+            <button onclick="appendCalc('5')">5</button>
+            <button onclick="appendCalc('6')">6</button>
+            <button class="op" onclick="appendCalc('-')">-</button>
+            <button onclick="appendCalc('1')">1</button>
+            <button onclick="appendCalc('2')">2</button>
+            <button onclick="appendCalc('3')">3</button>
+            <button class="op" onclick="appendCalc('+')">+</button>
+            <button onclick="appendCalc('0')">0</button>
+            <button onclick="appendCalc('.')">.</button>
+            <button class="eq" onclick="calculateResult()">=</button>
+        </div>
+        <button style="background:#666; margin-top:8px; padding:8px; border:none; border-radius:6px; color:white; width:100%; cursor:pointer;" onclick="closeCalculator()">বন্ধ করুন</button>
+    </div>
+</div>
+
+<script>
+    let records = JSON.parse(localStorage.getItem('grameen_trust_ent_records')) || [];
+    let collectionHistory = JSON.parse(localStorage.getItem('grameen_trust_collection_history')) || [];
+    let cachedPhoneBook = JSON.parse(localStorage.getItem('grameen_phonebook_cache')) || {};
+    let currentLang = localStorage.getItem('grameen_app_lang') || 'bn';
+
+    let userProfile = JSON.parse(localStorage.getItem('grameen_trust_user')) || {
+        name: "মোঃ ফোরকান হোসাইন",
+        desig: "সহকারী ইউনিট অফিসার",
+        idNo: "৪২৭",
+        pass: "1234",
+        photo: ""
+    };
+
+    let activeModalIndex = null;
+
+    document.getElementById('collectionDate').valueAsDate = new Date();
+    document.getElementById('colDateInput').valueAsDate = new Date();
+    document.getElementById('langSelector').value = currentLang;
+    applyLanguage(currentLang);
+    loadUserProfileUI();
+    updateCenterSuggestions();
+    updateCollectionIdDropdown();
+
+    const langData = {
+        bn: {
+            appTitle: "গ্রামীণ ট্রাস্ট উদ্যোক্তা তথ্য",
+            headerTitle: "গ্রামীণ ট্রাস্ট উদ্যোক্তা তথ্য",
+            btnLinkText: "লগইন সাইট",
+            btnSearchAction: "সার্চ করুন",
+            lblBulkTitle: "📁 এক্সেল বা ফাইল আপলোড ও ডিলিট করুন:",
+            btnUploadAction: "আপলোড",
+            btnDeleteAction: "সকল ডাটা ডিলিট",
+            btnAddNew: "+ নতুন উদ্যোক্তা যুক্ত করুন",
+            formTitle: "নতুন উদ্যোক্তার তথ্য ফরম",
+            lblPhoto: "উদ্যোক্তার ছবি",
+            lblName: "উদ্যোক্তার নাম",
+            lblGuardian: "স্বামীর নাম বা পিতার নাম",
+            lblIdNo: "আইডি নম্বর",
+            lblPhoneSection: "মোবাইল নম্বর ও কার নম্বর",
+            btnPhonebook: "📱 ফোনবুক থেকে নিন",
+            btnAddPhoneFile: "📂 এড ফোনবুক ফাইল",
+            btnAddPhoneBtn: "এড ফোন",
+            lblProject: "প্রকল্পের নাম",
+            lblTotalLoan: "মোট লোন পরিমাণ (টাকা)",
+            lblMonthlyInstallment: "প্রতি মাসে কিস্তির পরিমাণ (টাকা)",
+            lblCenter: "এলাকার নাম বা কেন্দ্রের নাম",
+            lblDate: "তারিখ",
+            btnSave: "সংরক্ষণ করুন",
+            btnCancel: "বাতিল",
+            filterBoxTitle: "কেন্দ্র ও নির্দিষ্ট তারিখ অনুযায়ী আদায় রিপোর্ট",
+            btnReportSearch: "রিপোর্ট দেখুন",
+            btnReportReset: "সব দেখুন",
+            txtTotalEntLabel: "মোট উদ্যোক্তা:",
+            txtPersonLabel: "জন",
+            txtTotalCollectionLabel: "মোট আদায়:",
+            btnShareAll: "📤 তথ্য শেয়ার",
+            btnCalc: "ক্যালকুলেটর খুলুন",
+            tableHeaderLabel: "উদ্যোক্তাদের তালিকা (নামে বা যেকোনো তথ্যে ক্লিক করলে পরিবর্তন বা এডিট করা যাবে):",
+            thPhoto: "ছবি",
+            thNameId: "নাম ও আইডি",
+            thPhone: "মোবাইল নম্বরসমূহ ও কল",
+            thProjCenter: "প্রকল্প ও কেন্দ্র",
+            thInstallment: "কিস্তি",
+            thDate: "তারিখ",
+            thAction: "অ্যাকশন",
+            footerCopyright: "কপিরাইট: মোঃ ফোরকান হোসাইন, সহকারী ইউনিট অফিসার, আইডি নং-৪২৭",
+            modalDetailsTitle: "উদ্যোক্তার বিস্তারিত তথ্য",
+            btnModalShare: "📤 শেয়ার",
+            btnModalClose: "বন্ধ করুন",
+            modalProfileTitle: "ইউজার প্রোফাইল ও সেটিংস",
+            btnEditProfile: "প্রোফাইল এডিট ও পাসওয়ার্ড পরিবর্তন",
+            btnProfileClose: "বন্ধ করুন",
+            navBtnHome: "🏠 উদ্যোক্তা তালিকা",
+            navBtnCollection: "💰 কিস্তি সংগ্রহ পেজ",
+            btnCollectionSave: "কিস্তি সংগ্রহ"
+        },
+        en: {
+            appTitle: "Grameen Trust Entrepreneur Info",
+            headerTitle: "Grameen Trust Ent. Info",
+            btnLinkText: "Login Site",
+            btnSearchAction: "Search",
+            lblBulkTitle: "📁 Upload or Delete Files:",
+            btnUploadAction: "Upload",
+            btnDeleteAction: "Delete All Data",
+            btnAddNew: "+ Add New Entrepreneur",
+            formTitle: "New Entrepreneur Information Form",
+            lblPhoto: "Entrepreneur Photo",
+            lblName: "Entrepreneur Name",
+            lblGuardian: "Husband or Father Name",
+            lblIdNo: "ID Number",
+            lblPhoneSection: "Mobile Numbers & Owner",
+            btnPhonebook: "📱 Pick Phonebook",
+            btnAddPhoneFile: "📂 Add Phonebook File",
+            btnAddPhoneBtn: "Add Phone",
+            lblProject: "Project Name",
+            lblTotalLoan: "Total Loan Amount (BDT)",
+            lblMonthlyInstallment: "Monthly Installment (BDT)",
+            lblCenter: "Area or Center Name",
+            lblDate: "Date",
+            btnSave: "Save Record",
+            btnCancel: "Cancel",
+            filterBoxTitle: "Collection Report by Center & Date",
+            btnReportSearch: "View Report",
+            btnReportReset: "View All",
+            txtTotalEntLabel: "Total Entrepreneurs:",
+            txtPersonLabel: "Persons",
+            txtTotalCollectionLabel: "Total Collection:",
+            btnShareAll: "📤 Share Info",
+            btnCalc: "Open Calculator",
+            tableHeaderLabel: "Entrepreneur List (Click any item to edit/change):",
+            thPhoto: "Photo",
+            thNameId: "Name & ID",
+            thPhone: "Mobile Numbers & Call",
+            thProjCenter: "Project & Center",
+            thInstallment: "Installment",
+            thDate: "Date",
+            thAction: "Action",
+            footerCopyright: "Copyright: Md. Forkan Hossain, Asst. Unit Officer, ID No-427",
+            modalDetailsTitle: "Entrepreneur Detailed Info",
+            btnModalShare: "📤 Share",
+            btnModalClose: "Close",
+            modalProfileTitle: "User Profile & Settings",
+            btnEditProfile: "Edit Profile & Change Password",
+            btnProfileClose: "Close",
+            navBtnHome: "🏠 Ent. List",
+            navBtnCollection: "💰 Collection Page",
+            btnCollectionSave: "Collection Save"
+        }
+    };
+
+    function changeLanguage() {
+        currentLang = document.getElementById('langSelector').value;
+        localStorage.setItem('grameen_app_lang', currentLang);
+        applyLanguage(currentLang);
+    }
+
+    function applyLanguage(lang) {
+        document.getElementById('htmlRoot').setAttribute('lang', lang);
+        let d = langData[lang];
+        for (let key in d) {
+            let el = document.getElementById(key);
+            if (el) { el.innerText = d[key]; }
+        }
+    }
+
+    function switchView(viewName) {
+        if(viewName === 'main') {
+            document.getElementById('mainDashboardView').style.display = 'block';
+            document.getElementById('collectionPageView').style.display = 'none';
+        } else {
+            document.getElementById('mainDashboardView').style.display = 'none';
+            document.getElementById('collectionPageView').style.display = 'block';
+            updateCollectionIdDropdown();
+            renderCollectionHistory();
+        }
+    }
+
+    function loadUserProfileUI() {
+        document.getElementById('userBadgeName').innerText = userProfile.name.split(' ')[0] || "প্রোফাইল";
+        let avatarDiv = document.getElementById('userAvatarDisplay');
+        if (userProfile.photo) {
+            avatarDiv.innerHTML = `<img src="${userProfile.photo}" alt="User">`;
+        } else {
+            avatarDiv.innerHTML = '👤';
+        }
+
+        document.getElementById('pNameDisp').innerText = userProfile.name;
+        document.getElementById('pDesigDisp').innerText = userProfile.desig;
+        document.getElementById('pIdDisp').innerText = userProfile.idNo;
+
+        let mAvatar = document.getElementById('profileModalAvatar');
+        if (userProfile.photo) {
+            mAvatar.innerHTML = `<img src="${userProfile.photo}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #2e7d32;">`;
+        } else {
+            mAvatar.innerHTML = '<div style="font-size:40px;">👤</div>';
+        }
+    }
+
+    function openProfileModal() {
+        document.getElementById('profileViewSection').style.display = 'block';
+        document.getElementById('profileEditSection').style.display = 'none';
+        document.getElementById('profileModal').style.display = 'flex';
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').style.display = 'none';
+    }
+
+    function switchToEditProfile() {
+        document.getElementById('loginName').value = userProfile.name;
+        document.getElementById('loginDesig').value = userProfile.desig;
+        document.getElementById('loginIdNo').value = userProfile.idNo;
+        document.getElementById('loginPass').value = userProfile.pass;
+        document.getElementById('profileViewSection').style.display = 'none';
+        document.getElementById('profileEditSection').style.display = 'block';
+    }
+
+    function cancelEditProfile() {
+        document.getElementById('profileEditSection').style.display = 'none';
+        document.getElementById('profileViewSection').style.display = 'block';
+    }
+
+    function saveUserProfile() {
+        let name = document.getElementById('loginName').value.trim();
+        let desig = document.getElementById('loginDesig').value.trim();
+        let idNo = document.getElementById('loginIdNo').value.trim();
+        let pass = document.getElementById('loginPass').value.trim();
+        let photoFile = document.getElementById('loginPhotoFile').files[0];
+
+        function persistProfile(photoData) {
+            userProfile = { name, desig, idNo, pass, photo: photoData || userProfile.photo };
+            localStorage.setItem('grameen_trust_user', JSON.stringify(userProfile));
+            loadUserProfileUI();
+            cancelEditProfile();
+            alert('ইউজার প্রোফাইল সফলভাবে আপডেট করা হয়েছে!');
+        }
+
+        if (photoFile) {
+            let reader = new FileReader();
+            reader.onload = function(e) { persistProfile(e.target.result); }
+            reader.readAsDataURL(photoFile);
+        } else {
+            persistProfile(null);
+        }
+    }
+
+    function autoFillFromPhoneCache(inputElem) {
+        let val = inputElem.value.trim();
+        if(cachedPhoneBook[val]) {
+            let foundName = cachedPhoneBook[val];
+            let nameField = document.getElementById('entName');
+            if(nameField && !nameField.value) {
+                nameField.value = foundName;
+            }
+        }
+        let matchedRecord = records.find(r => r.phones && r.phones.some(p => p.num === val));
+        if(matchedRecord) {
+            document.getElementById('entName').value = matchedRecord.entName || '';
+            document.getElementById('husOrFatherName').value = matchedRecord.husOrFatherName || '';
+            document.getElementById('idNo').value = matchedRecord.idNo || '';
+            document.getElementById('projectName').value = matchedRecord.projectName || '';
+            document.getElementById('loanAmount').value = matchedRecord.loanAmount || '';
+            document.getElementById('amount').value = matchedRecord.amount || '';
+            document.getElementById('centerName').value = matchedRecord.centerName || '';
+        }
+    }
+
+    function autoFillById(inputElem) {
+        let typedId = inputElem.value.trim();
+        if(!typedId) return;
+        let found = records.find(r => r.idNo === typedId);
+        if(found) {
+            document.getElementById('entName').value = found.entName || '';
+            document.getElementById('husOrFatherName').value = found.husOrFatherName || '';
+            document.getElementById('projectName').value = found.projectName || '';
+            document.getElementById('loanAmount').value = found.loanAmount || '';
+            document.getElementById('amount').value = found.amount || '';
+            document.getElementById('centerName').value = found.centerName || '';
+        }
+    }
+
+    function updateCenterSuggestions() {
+        let datalist = document.getElementById('centerSuggestions');
+        datalist.innerHTML = '';
+        let centers = [...new Set(records.map(r => r.centerName).filter(Boolean))];
+        centers.forEach(c => {
+            let opt = document.createElement('option');
+            opt.value = c;
+            datalist.appendChild(opt);
+        });
+    }
+
+    function updateCollectionIdDropdown(filterText = '') {
+        let select = document.getElementById('colSelectId');
+        select.innerHTML = '<option value="">-- উদ্যোক্তা বা আইডি সিলেক্ট করুন --</option>';
+        records.forEach((r, idx) => {
+            let textStr = `${r.entName} (আইডি: ${r.idNo || 'নেই'})`;
+            if(filterText === '' || textStr.toLowerCase().includes(filterText.toLowerCase()) || (r.idNo && r.idNo.includes(filterText))) {
+                let opt = document.createElement('option');
+                opt.value = idx;
+                opt.innerText = textStr;
+                select.appendChild(opt);
+            }
+        });
+    }
+
+    function filterColDropdown(inputElem) {
+        updateCollectionIdDropdown(inputElem.value.trim());
+    }
+
+    function onCollectionIdSelected() {
+        let idx = document.getElementById('colSelectId').value;
+        let card = document.getElementById('colDetailsCard');
+        if(idx === "") {
+            card.style.display = 'none';
+            return;
+        }
+        let item = records[idx];
+        document.getElementById('colEntName').innerText = item.entName;
+        document.getElementById('colEntIdText').innerText = item.idNo || 'নেই';
+        document.getElementById('colProjectName').innerText = item.projectName || '-';
+        document.getElementById('colLoanAmount').innerText = item.loanAmount || 0;
+        document.getElementById('colFixedInstallment').innerText = item.amount || 0;
+        document.getElementById('colPaidAmount').value = item.amount || 0;
+        card.style.display = 'block';
+    }
+
+    function saveCollectionRecord() {
+        let idx = document.getElementById('colSelectId').value;
+        if(idx === "") {
+            alert('দয়া করে একজন উদ্যোক্তা বা আইডি সিলেক্ট করুন।');
+            return;
+        }
+        let item = records[idx];
+        let date = document.getElementById('colDateInput').value;
+        let paidAmt = parseFloat(document.getElementById('colPaidAmount').value) || 0;
+
+        if(paidAmt <= 0) {
+            alert('সঠিক কিস্তির পরিমাণ লিখুন।');
+            return;
+        }
+
+        let colRecord = {
+            date: date,
+            entName: item.entName,
+            idNo: item.idNo || 'নেই',
+            amount: paidAmt
+        };
+
+        collectionHistory.push(colRecord);
+        localStorage.setItem('grameen_trust_collection_history', JSON.stringify(collectionHistory));
+        renderCollectionHistory();
+        alert('কিস্তি সফলভাবে সংগ্রহ ও সংরক্ষণ করা হয়েছে!');
+    }
+
+    function renderCollectionHistory() {
+        let tbody = document.getElementById('collectionHistoryBody');
+        tbody.innerHTML = '';
+        let totalCollectionSum = 0;
+        collectionHistory.slice().reverse().forEach(h => {
+            totalCollectionSum += h.amount;
+            let row = `<tr>
+                <td>${h.date}</td>
+                <td>${h.entName} (আইডি: ${h.idNo})</td>
+                <td>৳ ${h.amount}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+        if(collectionHistory.length > 0) {
+            let totalRow = `<tr style="background:#e8f5e9; font-weight:bold;">
+                <td colspan="2" style="text-align:right;">মোট আদায়:</td>
+                <td>৳ ${totalCollectionSum}</td>
+            </tr>`;
+            tbody.innerHTML += totalRow;
+        }
+    }
+
+    function globalSearchRecords() {
+        let query = document.getElementById('topSearchInput').value.trim().toLowerCase();
+        if(query === '') {
+            renderTable(records);
+            return;
+        }
+        let filtered = records.filter(item => {
+            let nameMatch = item.entName && item.entName.toLowerCase().includes(query);
+            let idMatch = item.idNo && item.idNo.toLowerCase().includes(query);
+            let projMatch = item.projectName && item.projectName.toLowerCase().includes(query);
+            let phoneMatch = item.phones && item.phones.some(p => p.num.includes(query));
+            return nameMatch || idMatch || projMatch || phoneMatch;
+        });
+        renderTable(filtered);
+    }
+
+    function toggleForm() {
+        let formSec = document.getElementById('formSection');
+        if (formSec.style.display === 'block') {
+            formSec.style.display = 'none';
+            clearForm();
+        } else {
+            formSec.style.display = 'block';
+        }
+    }
+
+    async function pickFromPhoneBook() {
+        if ('contacts' in navigator && 'select' in navigator.contacts) {
+            try {
+                const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+                if (contacts && contacts.length > 0) {
+                    let phone = contacts[0].tel[0] || '';
+                    let name = contacts[0].name[0] || '';
+                    let firstNumInput = document.querySelector('.phone-row .p-num');
+                    if (firstNumInput) {
+                        firstNumInput.value = phone;
+                        autoFillFromPhoneCache(firstNumInput);
+                    }
+                    if(name && !document.getElementById('entName').value) {
+                        document.getElementById('entName').value = name;
+                    }
+                    alert(`ফোনবুক থেকে কন্টাক্ট সফলভাবে নেওয়া হয়েছে।`);
+                }
+            } catch (ex) {
+                alert('ফোনবুক থেকে কন্টাক্ট নিতে সমস্যা হয়েছে।');
+            }
+        } else {
+            let manualNum = prompt('আপনার ফোনের কন্টাক্ট নম্বরটি এখানে লিখুন বা পেস্ট করুন:');
+            if (manualNum) {
+                let firstNumInput = document.querySelector('.phone-row .p-num');
+                if (firstNumInput) {
+                    firstNumInput.value = manualNum;
+                    autoFillFromPhoneCache(firstNumInput);
+                }
+            }
+        }
+    }
+
+    function importPhoneBookFile(event) {
+        let file = event.target.files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let text = e.target.result;
+            let lines = text.split(/\r?\n/);
+            let currentName = "";
+            let count = 0;
+            lines.forEach(line => {
+                if(line.includes("FN:")) { currentName = line.split("FN:")[1].trim(); }
+                else if(line.includes("TEL")) {
+                    let parts = line.split(":");
+                    let tel = parts[parts.length - 1].replace(/[^0-9+]/g, '').trim();
+                    if(tel && currentName) {
+                        cachedPhoneBook[tel] = currentName;
+                        count++;
+                    }
+                }
+            });
+            localStorage.setItem('grameen_phonebook_cache', JSON.stringify(cachedPhoneBook));
+            alert(`সফলভাবে ${count} টি কন্টাক্ট মেমরিতে যুক্ত করা হয়েছে!`);
+        };
+        reader.readAsText(file);
+    }
+
+    // আপলোড বাটন
+    function executeBulkUpload() {
+        let fileInput = document.getElementById('bulkFileExcel');
+        let file = fileInput.files[0];
+        if(!file) {
+            alert('দয়া করে প্রথমে একটি এক্সেল, পিডিএফ বা ফাইল সিলেক্ট করুন।');
+            return;
+        }
+        let reader = new FileReader();
+        
+        if(file.name.endsWith('.vcf')) {
+            reader.onload = function(e) {
+                let text = e.target.result;
+                let lines = text.split(/\r?\n/);
+                let cName = "", cTel = "";
+                let addedCount = 0;
+                lines.forEach(line => {
+                    if(line.includes("FN:")) cName = line.split("FN:")[1].trim();
+                    if(line.includes("TEL")) {
+                        let parts = line.split(":");
+                        cTel = parts[parts.length - 1].replace(/[^0-9+]/g, '').trim();
+                    }
+                    if(cName && cTel) {
+                        records.push({
+                            entName: cName,
+                            husOrFatherName: "",
+                            idNo: "",
+                            phones: [{num: cTel, type: "উদ্যোক্তা"}],
+                            projectName: "সাধারণ",
+                            loanAmount: 0,
+                            amount: 0,
+                            centerName: "সাধারণ কেন্দ্র",
+                            date: new Date().toISOString().split('T')[0],
+                            photo: ""
+                        });
+                        addedCount++;
+                        cName = ""; cTel = "";
+                    }
+                });
+                localStorage.setItem('grameen_trust_ent_records', JSON.stringify(records));
+                renderTable(records);
+                updateCenterSuggestions();
+                updateCollectionIdDropdown();
+                fileInput.value = "";
+                alert(`সফলভাবে ${addedCount} জন উদ্যোক্তার তথ্য আপলোড করা হয়েছে!`);
+            };
+            reader.readAsText(file);
+        } else {
+            reader.onload = function(e) {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, {type: 'array'});
+                let firstSheet = workbook.SheetNames[0];
+                let jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+                
+                let addedCount = 0;
+                jsonRows.forEach(row => {
+                    let name = row['Name'] || row['উদ্যোক্তার নাম'] || row['নাম'] || '';
+                    let phone = row['Phone'] || row['মোবাইল'] || row['নম্বর'] || '';
+                    let guardian = row['Guardian'] || row['পিতা/স্বামী'] || '';
+                    let id = row['ID'] || row['আইডি'] || '';
+                    let amount = parseFloat(row['Amount'] || row['কিস্তি'] || 0);
+                    let center = row['Center'] || row['কেন্দ্র'] || 'সাধারণ';
+
+                    if(name) {
+                        records.push({
+                            entName: name,
+                            husOrFatherName: guardian,
+                            idNo: id,
+                            phones: phone ? [{num: String(phone), type: "উদ্যোক্তা"}] : [],
+                            projectName: row['Project'] || 'প্রকল্প',
+                            loanAmount: parseFloat(row['Loan'] || 0),
+                            amount: amount,
+                            centerName: center,
+                            date: new Date().toISOString().split('T')[0],
+                            photo: ""
+                        });
+                        addedCount++;
+                    }
+                });
+                localStorage.setItem('grameen_trust_ent_records', JSON.stringify(records));
+                renderTable(records);
+                updateCenterSuggestions();
+                updateCollectionIdDropdown();
+                fileInput.value = "";
+                alert(`সফলভাবে ${addedCount} জন উদ্যোক্তার তথ্য ফাইল থেকে আপলোড হয়েছে!`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    }
+
+    // ডিলিট বাটন
+    function executeBulkDelete() {
+        if(records.length === 0) {
+            alert('মুছে ফেলার মতো কোনো ডাটা নেই।');
+            return;
+        }
+        if(confirm('আপনি কি নিশ্চিতভাবে মেমরি থেকে সকল উদ্যোক্তার তথ্য ডিলিট করতে চান?')) {
+            records = [];
+            localStorage.removeItem('grameen_trust_ent_records');
+            renderTable(records);
+            updateCenterSuggestions();
+            updateCollectionIdDropdown();
+            alert('সকল ডাটা সফলভাবে ডিলিট করা হয়েছে!');
+        }
+    }
+
+    function addPhoneField() {
+        let container = document.getElementById('phoneFieldsContainer');
+        let div = document.createElement('div');
+        div.className = 'phone-row';
+        div.innerHTML = `
+            <input type="tel" class="p-num" placeholder="017xxxxxxxx" oninput="autoFillFromPhoneCache(this)">
+            <select class="p-type">
+                <option value="উদ্যোক্তা">উদ্যোক্তা</option>
+                <option value="স্বামী">স্বামী</option>
+                <option value="পিতা">পিতা</option>
+                <option value="অন্যান্য">অন্যান্য</option>
+            </select>
+            <button type="button" onclick="this.parentElement.remove()" style="width: auto; padding: 8px; background: #f44336;">✕</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function clearForm() {
+        document.getElementById('editIndex').value = '';
+        document.getElementById('entName').value = '';
+        document.getElementById('husOrFatherName').value = '';
+        document.getElementById('idNo').value = '';
+        document.getElementById('projectName').value = '';
+        document.getElementById('loanAmount').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('centerName').value = '';
+        document.getElementById('entPhotoFile').value = '';
+        document.getElementById('phoneFieldsContainer').innerHTML = `
+            <div class="phone-row">
+                <input type="tel" class="p-num" placeholder="017xxxxxxxx" oninput="autoFillFromPhoneCache(this)">
+                <select class="p-type">
+                    <option value="উদ্যোক্তা">উদ্যোক্তা</option>
+                    <option value="স্বামী">স্বামী</option>
+                    <option value="পিতা">পিতা</option>
+                    <option value="অন্যান্য">অন্যান্য</option>
+                </select>
+                <button type="button" onclick="addPhoneField()" style="width: auto; padding: 8px; background: #1976d2;" id="btnAddPhoneBtn">এড ফোন</button>
+            </div>
+        `;
+        document.getElementById('collectionDate').valueAsDate = new Date();
+    }
+
+    function saveRecord() {
+        let editIndex = document.getElementById('editIndex').value;
+        let entName = document.getElementById('entName').value.trim();
+        let husOrFatherName = document.getElementById('husOrFatherName').value.trim();
+        let idNo = document.getElementById('idNo').value.trim();
+        let projectName = document.getElementById('projectName').value.trim();
+        let loanAmount = parseFloat(document.getElementById('loanAmount').value) || 0;
+        let amount = parseFloat(document.getElementById('amount').value) || 0;
+        let centerName = document.getElementById('centerName').value.trim();
+        let date = document.getElementById('collectionDate').value;
+
+        let phones = [];
+        document.querySelectorAll('.phone-row').forEach(row => {
+            let num = row.querySelector('.p-num').value.trim();
+            let type = row.querySelector('.p-type').value;
+            if (num) { phones.push({ num, type }); }
+        });
+
+        if (entName === '') {
+            alert('দয়া করে উদ্যোক্তার নাম লিখুন।');
+            return;
+        }
+
+        let photoFile = document.getElementById('entPhotoFile').files[0];
+
+        function proceedSave(photoData) {
+            let recordData = {
+                entName, husOrFatherName, idNo, phones, projectName, loanAmount, amount, centerName, date,
+                photo: photoData || (editIndex !== '' ? records[editIndex].photo : '')
+            };
+
+            if (editIndex === '') {
+                records.push(recordData);
+            } else {
+                records[editIndex] = recordData;
+            }
+
+            localStorage.setItem('grameen_trust_ent_records', JSON.stringify(records));
+            renderTable(records);
+            updateCenterSuggestions();
+            updateCollectionIdDropdown();
+            toggleForm();
+            clearForm();
+            alert('তথ্য সফলভাবে মোবাইলের মেমরিতে সংরক্ষণ করা হয়েছে!');
+        }
+
+        if (photoFile) {
+            let reader = new FileReader();
+            reader.onload = function(e) { proceedSave(e.target.result); }
+            reader.readAsDataURL(photoFile);
+        } else {
+            proceedSave(null);
+        }
+    }
+
+    function renderTable(dataArray) {
+        let tbody = document.getElementById('recordTableBody');
+        tbody.innerHTML = '';
+        let totalAmount = 0;
+
+        dataArray.forEach((item, index) => {
+            totalAmount += item.amount;
+            
+            // ফোন নম্বরের পাশে "কল করুন" বাটন
+            let phonesHtml = item.phones.map(p => `
+                <div style="margin-bottom:3px; display:flex; align-items:center; justify-content:center; gap:4px;">
+                    <span>${p.num} (${p.type})</span>
+                    <a href="tel:${p.num}" style="background:#2e7d32; color:white; padding:2px 6px; border-radius:4px; text-decoration:none; font-size:11px;">কল করুন</a>
+                </div>
+            `).join('');
+
+            let photoHtml = item.photo ? `<img src="${item.photo}" class="ent-photo" onclick="showDetails(${index})">` : `<div class="ent-photo" style="display:flex;align-items:center;justify-content:center;background:#ddd;font-size:11px;" onclick="showDetails(${index})">ছবি</div>`;
+
+            let row = `<tr>
+                <td onclick="editRecord(${index})" style="cursor:pointer;">${photoHtml}</td>
+                <td onclick="editRecord(${index})" style="cursor:pointer;"><span class="ent-name-link">${item.entName}</span><br><small>আইডি: ${item.idNo || 'নেই'}</small></td>
+                <td>${phonesHtml || 'নম্বর নেই'}</td>
+                <td onclick="editRecord(${index})" style="cursor:pointer;">${item.projectName || '-'}<br><small>কেন্দ্র: ${item.centerName || '-'}</small></td>
+                <td onclick="editRecord(${index})" style="cursor:pointer;">৳ ${item.amount}</td>
+                <td onclick="editRecord(${index})" style="cursor:pointer;">${item.date}</td>
+                <td>
+                    <button style="background: #ff9800; color:white; padding:3px 6px; border:none; border-radius:4px; margin-bottom:2px; cursor:pointer;" onclick="editRecord(${index})">এডিট</button><br>
+                    <button style="background: #f44336; color:white; padding:3px 6px; border:none; border-radius:4px; cursor:pointer;" onclick="deleteRecord(${index})">ডিলিট</button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+
+        document.getElementById('totalDisplay').innerText = '৳ ' + totalAmount;
+        document.getElementById('totalEntrepreneurCount').innerText = dataArray.length;
+    }
+
+    function showDetails(index) {
+        activeModalIndex = index;
+        let item = records[index];
+        let phonesText = item.phones.map(p => `${p.num} (${p.type})`).join(', ');
+        let detailsHtml = `
+            <div style="text-align:center; margin-bottom:15px;">
+                ${item.photo ? `<img src="${item.photo}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #2e7d32;">` : ''}
+            </div>
+            <p><b>উদ্যোক্তার নাম:</b> ${item.entName}</p>
+            <p><b>স্বামীর/পিতার নাম:</b> ${item.husOrFatherName || '-'}</p>
+            <p><b>আইডি নম্বর:</b> ${item.idNo || '-'}</p>
+            <p><b>মোবাইল নম্বরসমূহ:</b> ${phonesText || '-'}</p>
+            <p><b>প্রকল্পের নাম:</b> ${item.projectName || '-'}</p>
+            <p><b>এলাকা বা কেন্দ্রের নাম:</b> ${item.centerName || '-'}</p>
+            <p><b>মোট লোন পরিমাণ:</b> ৳ ${item.loanAmount || 0}</p>
+            <p><b>প্রতি মাসের কিস্তির পরিমাণ:</b> ৳ ${item.amount || 0}</p>
+            <p><b>তারিখ:</b> ${item.date || '-'}</p>
+            <button onclick="closeDetailsModal(); editRecord(${index});" style="background:#ff9800; margin-top:12px;">তথ্য পরিবর্তন বা এডিট করুন</button>
+        `;
+        document.getElementById('detailsBody').innerHTML = detailsHtml;
+        document.getElementById('detailsModal').style.display = 'flex';
+    }
+
+    function closeDetailsModal() {
+        document.getElementById('detailsModal').style.display = 'none';
+        activeModalIndex = null;
+    }
+
+    function editRecord(index) {
+        let item = records[index];
+        document.getElementById('editIndex').value = index;
+        document.getElementById('entName').value = item.entName;
+        document.getElementById('husOrFatherName').value = item.husOrFatherName;
+        document.getElementById('idNo').value = item.idNo;
+        document.getElementById('projectName').value = item.projectName;
+        document.getElementById('loanAmount').value = item.loanAmount;
+        document.getElementById('amount').value = item.amount;
+        document.getElementById('centerName').value = item.centerName;
+        document.getElementById('collectionDate').value = item.date;
+
+        let container = document.getElementById('phoneFieldsContainer');
+        container.innerHTML = '';
+        if (item.phones && item.phones.length > 0) {
+            item.phones.forEach((p, i) => {
+                let div = document.createElement('div');
+                div.className = 'phone-row';
+                div.innerHTML = `
+                    <input type="tel" class="p-num" value="${p.num}" oninput="autoFillFromPhoneCache(this)">
+                    <select class="p-type">
+                        <option value="উদ্যোক্তা" ${p.type==='উদ্যোক্তা'?'selected':''}>উদ্যোক্তা</option>
+                        <option value="স্বামী" ${p.type==='স্বামী'?'selected':''}>স্বামী</option>
+                        <option value="পিতা" ${p.type==='পিতা'?'selected':''}>পিতা</option>
+                        <option value="অন্যান্য" ${p.type==='অন্যান্য'?'selected':''}>অন্যান্য</option>
+                    </select>
+                    <button type="button" onclick="this.parentElement.remove()" style="width: auto; padding: 8px; background: #f44336;">✕</button>
+                `;
+                container.appendChild(div);
+            });
+        } else {
+            addPhoneField();
+        }
+
+        document.getElementById('formTitle').innerText = 'তথ্য পরিবর্তন বা এডিট করুন';
+        document.getElementById('formSection').style.display = 'block';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function deleteRecord(index) {
+        if (confirm('আপনি কি নিশ্চিত এই রেকর্ডটি ডিলিট করতে চান?')) {
+            records.splice(index, 1);
+            localStorage.setItem('grameen_trust_ent_records', JSON.stringify(records));
+            renderTable(records);
+            updateCenterSuggestions();
+            updateCollectionIdDropdown();
+        }
+    }
+
+    function filterRecords() {
+        let centerQuery = document.getElementById('filterCenter').value.trim().toLowerCase();
+        let dateQuery = document.getElementById('filterDate').value;
+
+        let filtered = records.filter(item => {
+            let matchCenter = centerQuery === '' || (item.centerName && item.centerName.toLowerCase().includes(centerQuery));
+            let matchDate = dateQuery === '' || item.date === dateQuery;
+            return matchCenter && matchDate;
+        });
+
+        renderTable(filtered);
+    }
+
+    function resetFilter() {
+        document.getElementById('filterCenter').value = '';
+        document.getElementById('filterDate').value = '';
+        renderTable(records);
+    }
+
+    function shareSingleRecord() {
+        if (activeModalIndex === null) return;
+        let item = records[activeModalIndex];
+        let phonesText = item.phones.map(p => `${p.num} (${p.type})`).join(', ');
+        let shareText = `--- গ্রামীণ ট্রাস্ট উদ্যোক্তা তথ্য ---\n` +
+                        `নাম: ${item.entName}\n` +
+                        `পিতা/স্বামী: ${item.husOrFatherName || '-'}\n` +
+                        `আইডি নং: ${item.idNo || '-'}\n` +
+                        `মোবাইল: ${phonesText}\n` +
+                        `প্রকল্প: ${item.projectName || '-'}\n` +
+                        `কেন্দ্র: ${item.centerName || '-'}\n` +
+                        `মাসিক কিস্তি: ৳ ${item.amount}\n` +
+                        `তারিখ: ${item.date}\n` +
+                        `কপিরাইট: মোঃ ফোরকান হোসাইন, সহকারী ইউনিট অফিসার, আইডি নং-৪২৭`;
+
+        if (navigator.share) {
+            navigator.share({ title: 'উদ্যোক্তার তথ্য', text: shareText }).catch(err => console.log(err));
+        } else {
+            navigator.clipboard.writeText(shareText);
+            alert('তথ্য কপি করা হয়েছে!');
+        }
+    }
+
+    function shareAllData() {
+        if (records.length === 0) {
+            alert('শেয়ার করার মতো কোনো তথ্য নেই!');
+            return;
+        }
+        let totalAmt = records.reduce((sum, r) => sum + r.amount, 0);
+        let shareText = `=== গ্রামীণ ট্রাস্ট মোট উদ্যোক্তা প্রতিবেদন ===\n` +
+                        `মোট উদ্যোক্তা সংখ্যা: ${records.length} জন\n` +
+                        `মোট মাসিক আদায়: ৳ ${totalAmt}\n` +
+                        `তৈরি করেছেন: মোঃ ফোরকান হোসাইন, সহকারী ইউনিট অফিসার, আইডি নং-৪২৭`;
+
+        if (navigator.share) {
+            navigator.share({ title: 'সকল উদ্যোক্তার তথ্য', text: shareText }).catch(err => console.log(err));
+        } else {
+            navigator.clipboard.writeText(shareText);
+            alert('রিপোর্ট কপি করা হয়েছে!');
+        }
+    }
+
+    function openCalculator() { document.getElementById('calculatorModal').style.display = 'flex'; }
+    function closeCalculator() { document.getElementById('calculatorModal').style.display = 'none'; }
+
+    let calcExpression = '';
+    function appendCalc(val) {
+        calcExpression += val;
+        document.getElementById('calcScreen').innerText = calcExpression;
+    }
+    function clearCalc() {
+        calcExpression = '';
+        document.getElementById('calcScreen').innerText = '0';
+    }
+    function calculateResult() {
+        try {
+            let res = eval(calcExpression);
+            document.getElementById('calcScreen').innerText = res;
+            calcExpression = res.toString();
+        } catch(e) {
+            document.getElementById('calcScreen').innerText = 'ভুল হিসাব';
+            calcExpression = '';
+        }
+    }
+
+    window.onload = () => renderTable(records);
+</script>
+
+</body>
+</html>
